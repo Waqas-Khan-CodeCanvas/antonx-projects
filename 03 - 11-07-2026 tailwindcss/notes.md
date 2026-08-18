@@ -4,6 +4,7 @@ how to setup the tailwindcss
 02 -> through CLI
 03 -> through using vite
 04 -> through using PostCSS
+04 -> through using Framework guide
 
 
 
