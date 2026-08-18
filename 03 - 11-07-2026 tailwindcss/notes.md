@@ -1,7 +1,7 @@
 how to setup the tailwindcss
 
-1 -> through cdn
-2 -> through
+1 -> through play cdn
+2 -> through CLI
 
 min-h-screen
 max-w-4xl
