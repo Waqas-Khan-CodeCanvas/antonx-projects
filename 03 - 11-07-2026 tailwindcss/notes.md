@@ -3,6 +3,8 @@ how to setup the tailwindcss
 01 -> through play cdn
 02 -> through CLI
 03 -> through using vite
+04 -> through using PostCSS
+
 
 
 min-h-screen
