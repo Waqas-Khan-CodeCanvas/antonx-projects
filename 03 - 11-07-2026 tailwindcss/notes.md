@@ -1,7 +1,7 @@
 how to setup the tailwindcss
 
-1 -> throught cdn
-
+1 -> through cdn
+2 -> through
 
 min-h-screen
 max-w-4xl
