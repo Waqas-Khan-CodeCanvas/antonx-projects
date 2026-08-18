@@ -1,7 +1,9 @@
 how to setup the tailwindcss
 
-1 -> through play cdn
-2 -> through CLI
+01 -> through play cdn
+02 -> through CLI
+03 -> through using vite
+
 
 min-h-screen
 max-w-4xl
