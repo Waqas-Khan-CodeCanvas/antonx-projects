@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Lab Client — Axios</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script> -->
+ <script src="node_modules/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+<div class="mx-auto max-w-3xl px-4 py-8 space-y-8">
+
+  <header class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold">Fetch Lab — <span class="text-indigo-600">Axios</span></h1>
+    <span id="healthBadge" class="rounded-full px-3 py-1 text-xs font-semibold bg-slate-200">checking…</span>
+  </header>
+
+  <div id="status" class="hidden rounded-lg px-4 py-2 text-sm"></div>
+
+  <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 class="font-semibold mb-3">Login</h2>
+    <div id="loggedOutBox" class="flex gap-2">
+      <input id="username" placeholder="username" class="border rounded-lg px-3 py-2 text-sm flex-1" value="student" />
+      <input id="password" placeholder="password" type="password" class="border rounded-lg px-3 py-2 text-sm flex-1" value="1234" />
+      <button onclick="handleLogin()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Log in</button>
+    </div>
+    <div id="loggedInBox" class="hidden items-center justify-between">
+      <p class="text-sm">Signed in as <b id="whoami"></b></p>
+      <button onclick="handleLogout()" class="border px-3 py-1.5 rounded-lg text-sm">Log out</button>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-semibold">Products</h2>
+      <button onclick="loadProducts()" class="text-sm text-indigo-600 font-medium">Refresh</button>
+    </div>
+
+    <form onsubmit="return handleCreateProduct(event)" class="flex gap-2 mb-4">
+      <input id="pName" placeholder="Name" class="border rounded-lg px-3 py-2 text-sm flex-1" required />
+      <input id="pPrice" placeholder="Price" type="number" step="0.01" class="border rounded-lg px-3 py-2 text-sm w-28" required />
+      <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Add</button>
+    </form>
+
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-slate-500 border-b">
+        <th class="py-2">ID</th><th>Name</th><th>Price</th><th class="text-right">Actions</th>
+      </tr></thead>
+      <tbody id="productRows"></tbody>
+    </table>
+  </section>
+
+  <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 class="font-semibold mb-3">Place order (protected)</h2>
+    <form onsubmit="return handleCreateOrder(event)" class="flex gap-2">
+      <select id="orderProductId" class="border rounded-lg px-3 py-2 text-sm flex-1"></select>
+      <input id="orderQty" type="number" min="1" value="1" class="border rounded-lg px-3 py-2 text-sm w-24" />
+      <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Order</button>
+    </form>
+    <pre id="orderResult" class="mt-3 text-xs bg-slate-900 text-slate-100 rounded-lg p-3 hidden"></pre>
+  </section>
+
+  <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex gap-3">
+    <button onclick="handleAdminStats()" class="border px-4 py-2 rounded-lg text-sm font-semibold">Load admin stats</button>
+    <button onclick="handleTriggerError()" class="border px-4 py-2 rounded-lg text-sm font-semibold text-red-600">Trigger /api/error</button>
+  </section>
+  <pre id="miscResult" class="text-xs bg-slate-900 text-slate-100 rounded-lg p-3 hidden"></pre>
+
+</div>
+
+<script>
+const API_BASE = location.port === "3000" || location.port === "" ? "" : "http://localhost:3000";
+let token = localStorage.getItem("axios_token");
+let user = JSON.parse(localStorage.getItem("axios_user") || "null");
+
+// A shared axios instance with a baseURL — no need to repeat it per call.
+const http = axios.create({ baseURL: API_BASE });
+
+/**
+ * Axios notes vs fetch/XHR:
+ *  - axios.<method>() ALREADY parses JSON for you: response.data
+ *  - Since the API wraps everything as { data } / { error }, we unwrap
+ *    response.data.data below
+ *  - Non-2xx responses THROW automatically (unlike fetch) — caught via
+ *    err.response.data.error
+ */
+async function apiRequest(path, { method = "GET", body, auth = false } = {}) {
+  const headers = {};
+  if (auth && token) headers["Authorization"] = "Bearer " + token;
+
+  try {
+    const res = await http.request({ url: path, method, data: body, headers });
+    return res.data.data;
+  } catch (err) {
+    if (err.response) {
+      throw new Error(err.response.data?.error || `Request failed with status ${err.response.status}`);
+    }
+    throw new Error("Network error — is the backend running on port 3000?");
+  }
+}
+
+function showStatus(type, message) {
+  const el = document.getElementById("status");
+  el.className = "rounded-lg px-4 py-2 text-sm " +
+    (type === "error" ? "bg-red-50 text-red-700 border border-red-200"
+      : "bg-emerald-50 text-emerald-700 border border-emerald-200");
+  el.textContent = message;
+  setTimeout(() => el.classList.add("hidden"), 3500);
+}
+
+function renderAuthUI() {
+  document.getElementById("loggedOutBox").classList.toggle("hidden", !!user);
+  document.getElementById("loggedInBox").classList.toggle("flex", !!user);
+  document.getElementById("loggedInBox").classList.toggle("hidden", !user);
+  if (user) document.getElementById("whoami").textContent = `${user.username} (${user.role})`;
+}
+
+async function checkHealth() {
+  const badge = document.getElementById("healthBadge");
+  try {
+    await apiRequest("/api/health");
+    badge.textContent = "API online";
+    badge.className = "rounded-full px-3 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700";
+  } catch {
+    badge.textContent = "API offline";
+    badge.className = "rounded-full px-3 py-1 text-xs font-semibold bg-red-100 text-red-700";
+  }
+}
+
+async function handleLogin() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+  try {
+    const data = await apiRequest("/api/auth/login", { method: "POST", body: { username, password } });
+    token = data.token;
+    user = data.user;
+    localStorage.setItem("axios_token", token);
+    localStorage.setItem("axios_user", JSON.stringify(user));
+    renderAuthUI();
+    showStatus("success", `Welcome, ${user.username}!`);
+  } catch (err) {
+    showStatus("error", err.message);
+  }
+}
+
+function handleLogout() {
+  token = null; user = null;
+  localStorage.removeItem("axios_token");
+  localStorage.removeItem("axios_user");
+  renderAuthUI();
+}
+
+async function loadProducts() {
+  try {
+    const products = await apiRequest("/api/products");
+    const rows = document.getElementById("productRows");
+    const select = document.getElementById("orderProductId");
+    rows.innerHTML = "";
+    select.innerHTML = "";
+    products.forEach((p) => {
+      rows.insertAdjacentHTML("beforeend", `
+        <tr class="border-b last:border-0">
+          <td class="py-2 text-slate-500">#${p.id}</td>
+          <td>${p.name}</td>
+          <td>$${p.price.toFixed(2)}</td>
+          <td class="text-right">
+            <button onclick="handleEditProduct(${p.id}, '${p.name}', ${p.price})" class="text-indigo-600 font-medium mr-3">Edit</button>
+            <button onclick="handleDeleteProduct(${p.id})" class="text-red-600 font-medium">Delete</button>
+          </td>
+        </tr>`);
+      select.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name} — $${p.price.toFixed(2)}</option>`);
+    });
+  } catch (err) {
+    showStatus("error", err.message);
+  }
+}
+
+async function handleCreateProduct(e) {
+  e.preventDefault();
+  const name = document.getElementById("pName").value.trim();
+  const price = Number(document.getElementById("pPrice").value);
+  try {
+    await apiRequest("/api/products", { method: "POST", body: { name, price } });
+    e.target.reset();
+    showStatus("success", `"${name}" created`);
+    loadProducts();
+  } catch (err) {
+    showStatus("error", err.message);
+  }
+  return false;
+}
+
+async function handleEditProduct(id, currentName, currentPrice) {
+  const name = prompt("New name:", currentName);
+  if (name === null) return;
+  const price = Number(prompt("New price:", currentPrice));
+  try {
+    await apiRequest(`/api/products/${id}`, { method: "PUT", body: { name, price } });
+    showStatus("success", "Product updated");
+    loadProducts();
+  } catch (err) {
+    showStatus("error", err.message);
+  }
+}
+
+async function handleDeleteProduct(id) {
+  if (!confirm(`Delete product #${id}?`)) return;
+  try {
+    await apiRequest(`/api/products/${id}`, { method: "DELETE" });
+    showStatus("success", "Product deleted");
+    loadProducts();
+  } catch (err) {
+    showStatus("error", err.message);
+  }
+}
+
+async function handleCreateOrder(e) {
+  e.preventDefault();
+  if (!token) return showStatus("error", "Log in first");
+  const productId = Number(document.getElementById("orderProductId").value);
+  const quantity = Number(document.getElementById("orderQty").value);
+  const pre = document.getElementById("orderResult");
+  try {
+    const result = await apiRequest("/api/orders", { method: "POST", body: { productId, quantity }, auth: true });
+    pre.textContent = JSON.stringify(result, null, 2);
+    pre.classList.remove("hidden");
+    showStatus("success", "Order placed");
+  } catch (err) {
+    showStatus("error", err.message);
+  }
+  return false;
+}
+
+async function handleAdminStats() {
+  if (!token) return showStatus("error", "Log in first");
+  const pre = document.getElementById("miscResult");
+  try {
+    const result = await apiRequest("/api/admin/stats", { auth: true });
+    pre.textContent = JSON.stringify(result, null, 2);
+    pre.classList.remove("hidden");
+  } catch (err) {
+    showStatus("error", err.message);
+  }
+}
+
+async function handleTriggerError() {
+  const pre = document.getElementById("miscResult");
+  try {
+    await apiRequest("/api/error");
+  } catch (err) {
+    pre.textContent = "Caught expected error: " + err.message;
+    pre.classList.remove("hidden");
+    showStatus("error", err.message);
+  }
+}
+
+renderAuthUI();
+checkHealth();
+loadProducts();
+</script>
+</body>
+</html>
+
+<!-- python3 -m http.server 5500. -->
