@@ -1,0 +1,16 @@
+{
+  "name": "fetch-axios-student-lab",
+  "version": "1.0.0",
+  "description": "Classroom lab for learning fetch and axios with Express CRUD + protected APIs",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "keywords": ["fetch", "axios", "express", "teaching", "http"],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}
