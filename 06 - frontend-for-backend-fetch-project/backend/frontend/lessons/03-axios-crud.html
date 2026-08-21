@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>3. Axios CRUD — Student Lab</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="../index.html">Fetch <span>&amp;</span> Axios Lab</a>
+        <nav class="nav">
+          <a href="../index.html">Home</a>
+          <a href="01-fetch-get.html">1. Fetch GET</a>
+          <a href="02-fetch-crud.html">2. Fetch CRUD</a>
+          <a href="03-axios-crud.html" aria-current="page">3. Axios</a>
+          <a href="04-auth-protected.html">4. Auth</a>
+          <a href="../playground.html">Playground</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <h1>Lesson 3 — Axios CRUD</h1>
+      <p class="lead">
+        Same product API as Lesson 2, using <strong>axios</strong> (CDN). Notice: body is a plain
+        object, JSON header is automatic, and failed status codes go to <code>catch</code>.
+      </p>
+
+      <div class="teach">
+        <strong>Axios vs fetch (same jobs)</strong>
+        <pre>// GET
+const { data } = await axios.get(`${API_BASE}/api/products`);
+
+// POST — object becomes JSON automatically
+const created = await axios.post(`${API_BASE}/api/products`, { name: "Book", price: 10 });
+// created.data  →  { data: { id, name, price } }
+
+// errors (404, 500, …) throw — use try/catch
+try {
+  await axios.get(`${API_BASE}/api/products/9999`);
+} catch (err) {
+  console.log(err.response.status, err.response.data);
+}</pre>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Topic</th>
+                <th>fetch</th>
+                <th>axios</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Import</td>
+                <td>Built into the browser</td>
+                <td>Script / npm package</td>
+              </tr>
+              <tr>
+                <td>JSON body</td>
+                <td><code>JSON.stringify</code> + header</td>
+                <td>Plain object</td>
+              </tr>
+              <tr>
+                <td>Read body</td>
+                <td><code>await res.json()</code></td>
+                <td><code>response.data</code></td>
+              </tr>
+              <tr>
+                <td>HTTP 404 / 500</td>
+                <td>Does not throw — check <code>ok</code></td>
+                <td>Throws (reject promise)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-top: 0">List / Get one</h3>
+          <div class="form-actions">
+            <button type="button" class="btn" id="btn-list">GET all</button>
+            <button type="button" class="btn btn-secondary" id="btn-one">GET id 1</button>
+            <button type="button" class="btn btn-secondary" id="btn-404">GET 9999 (error)</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top: 0">Create — POST</h3>
+          <div class="field">
+            <label for="create-name">Name</label>
+            <input id="create-name" type="text" value="Ruler" />
+          </div>
+          <div class="field">
+            <label for="create-price">Price</label>
+            <input id="create-price" type="number" min="0" step="0.01" value="2.5" />
+          </div>
+          <button type="button" class="btn" id="btn-create">axios.post</button>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top: 0">PUT / PATCH</h3>
+          <div class="field">
+            <label for="edit-id">Id</label>
+            <input id="edit-id" type="number" min="1" value="2" />
+          </div>
+          <div class="field">
+            <label for="edit-name">Name (PUT)</label>
+            <input id="edit-name" type="text" value="Pen Pro" />
+          </div>
+          <div class="field">
+            <label for="edit-price">Price</label>
+            <input id="edit-price" type="number" min="0" step="0.01" value="3" />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="btn-put">axios.put</button>
+            <button type="button" class="btn btn-secondary" id="btn-patch">
+              axios.patch price only
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top: 0">DELETE</h3>
+          <div class="field">
+            <label for="delete-id">Id</label>
+            <input id="delete-id" type="number" min="1" value="3" />
+          </div>
+          <button type="button" class="btn btn-danger" id="btn-delete">axios.delete</button>
+        </div>
+      </div>
+
+      <div id="status" class="status" role="status"></div>
+      <p class="panel-label">Response (<code>response.data</code> or error payload)</p>
+      <pre id="output" class="output"></pre>
+
+      <p class="foot-note">
+        Next: <a href="04-auth-protected.html">Lesson 4 — Auth &amp; protected routes</a>
+      </p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="../js/config.js"></script>
+    <script>
+      const statusEl = document.getElementById("status");
+      const outputEl = document.getElementById("output");
+
+      async function run(label, fn) {
+        setStatus(statusEl, "loading", label + "…");
+        showJson(outputEl, "");
+        try {
+          const result = await fn();
+          // axios puts parsed JSON on result.data
+          setStatus(statusEl, "ok", `OK ${result.status}`);
+          showJson(outputEl, result.data);
+        } catch (err) {
+          if (err.response) {
+            setStatus(
+              statusEl,
+              "err",
+              `${err.response.status} — ${err.response.data?.error || err.message}`
+            );
+            showJson(outputEl, err.response.data);
+          } else {
+            setStatus(statusEl, "err", "Network error: " + err.message);
+            showJson(outputEl, { error: err.message });
+          }
+        }
+      }
+
+      document.getElementById("btn-list").addEventListener("click", () => {
+        run("GET list", () => axios.get(API_BASE + "/api/products"));
+      });
+
+      document.getElementById("btn-one").addEventListener("click", () => {
+        run("GET one", () => axios.get(API_BASE + "/api/products/1"));
+      });
+
+      document.getElementById("btn-404").addEventListener("click", () => {
+        run("GET missing", () => axios.get(API_BASE + "/api/products/9999"));
+      });
+
+      document.getElementById("btn-create").addEventListener("click", () => {
+        const name = document.getElementById("create-name").value;
+        const price = Number(document.getElementById("create-price").value);
+        run("POST", () => axios.post(API_BASE + "/api/products", { name, price }));
+      });
+
+      document.getElementById("btn-put").addEventListener("click", () => {
+        const id = document.getElementById("edit-id").value;
+        const name = document.getElementById("edit-name").value;
+        const price = Number(document.getElementById("edit-price").value);
+        run("PUT", () => axios.put(API_BASE + `/api/products/${id}`, { name, price }));
+      });
+
+      document.getElementById("btn-patch").addEventListener("click", () => {
+        const id = document.getElementById("edit-id").value;
+        const price = Number(document.getElementById("edit-price").value);
+        run("PATCH", () => axios.patch(API_BASE + `/api/products/${id}`, { price }));
+      });
+
+      document.getElementById("btn-delete").addEventListener("click", () => {
+        const id = document.getElementById("delete-id").value;
+        run("DELETE", () => axios.delete(API_BASE + `/api/products/${id}`));
+      });
+    </script>
+  </body>
+</html>

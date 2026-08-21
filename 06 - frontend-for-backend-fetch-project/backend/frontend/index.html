@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fetch &amp; Axios Student Lab</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="index.html">Fetch <span>&amp;</span> Axios Lab</a>
+        <nav class="nav">
+          <a href="index.html" aria-current="page">Home</a>
+          <a href="lessons/01-fetch-get.html">1. Fetch GET</a>
+          <a href="lessons/02-fetch-crud.html">2. Fetch CRUD</a>
+          <a href="lessons/03-axios-crud.html">3. Axios</a>
+          <a href="lessons/04-auth-protected.html">4. Auth</a>
+          <a href="playground.html">Playground</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <h1>Fetch &amp; Axios Student Lab</h1>
+      <p class="lead">
+        Practice real HTTP calls with plain HTML/JS against a local Express API.
+        You will use <strong>fetch</strong>, then <strong>axios</strong>, then protect routes
+        with a Bearer token. Open DevTools → Network (filter Fetch/XHR) for every request.
+      </p>
+
+      <div class="tip">
+        <strong>Start the server:</strong> in the project folder run
+        <code>npm install</code> then <code>npm start</code>, and open
+        <code>http://localhost:3000</code>.
+      </div>
+
+      <h2>Lessons (follow this order)</h2>
+      <ul class="lesson-list">
+        <li>
+          <a href="lessons/01-fetch-get.html">
+            <span class="lesson-num">1</span>
+            <span>
+              <strong>Fetch GET</strong>
+              <small>List and get-one · async/await · res.ok · res.json()</small>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="lessons/02-fetch-crud.html">
+            <span class="lesson-num">2</span>
+            <span>
+              <strong>Fetch CRUD</strong>
+              <small>POST · PUT · PATCH · DELETE · Content-Type · JSON.stringify</small>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="lessons/03-axios-crud.html">
+            <span class="lesson-num">3</span>
+            <span>
+              <strong>Axios CRUD</strong>
+              <small>Same APIs with axios · response.data · automatic errors</small>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="lessons/04-auth-protected.html">
+            <span class="lesson-num">4</span>
+            <span>
+              <strong>Auth &amp; protected routes</strong>
+              <small>Login · localStorage · Bearer · 401 vs 403</small>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="playground.html">
+            <span class="lesson-num">★</span>
+            <span>
+              <strong>API Playground</strong>
+              <small>Free practice with fetch or axios for any method</small>
+            </span>
+          </a>
+        </li>
+      </ul>
+
+      <h2>Demo accounts</h2>
+      <div class="creds">
+        <div class="cred">
+          <strong>User</strong>
+          username: <code>student</code><br />
+          password: <code>1234</code><br />
+          role: <code>user</code>
+        </div>
+        <div class="cred">
+          <strong>Admin</strong>
+          username: <code>admin</code><br />
+          password: <code>1234</code><br />
+          role: <code>admin</code>
+        </div>
+      </div>
+
+      <h2>API cheat sheet</h2>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Path</th>
+                <th>Auth</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/api/products</code></td>
+                <td>Public</td>
+                <td>List products</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/api/products/:id</code></td>
+                <td>Public</td>
+                <td>One product (404 if missing)</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-post">POST</span></td>
+                <td><code>/api/products</code></td>
+                <td>Public</td>
+                <td>Body <code>{ "name", "price" }</code> → 201</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-put">PUT</span></td>
+                <td><code>/api/products/:id</code></td>
+                <td>Public</td>
+                <td>Full replace <code>{ "name", "price" }</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-patch">PATCH</span></td>
+                <td><code>/api/products/:id</code></td>
+                <td>Public</td>
+                <td>Partial update</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-delete">DELETE</span></td>
+                <td><code>/api/products/:id</code></td>
+                <td>Public</td>
+                <td>Delete product</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-post">POST</span></td>
+                <td><code>/api/auth/login</code></td>
+                <td>Public</td>
+                <td>Body <code>{ "username", "password" }</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/api/me</code></td>
+                <td>Bearer</td>
+                <td>Current user</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-post">POST</span></td>
+                <td><code>/api/orders</code></td>
+                <td>Bearer</td>
+                <td>Body <code>{ "productId", "quantity" }</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/api/admin/stats</code></td>
+                <td>Bearer + admin</td>
+                <td>403 for non-admin</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/api/error</code></td>
+                <td>Public</td>
+                <td>Always 500 (error practice)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h2>Response shape</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-top: 0">Success</h3>
+          <pre class="output" style="max-height: none">{ "data": { ... } }</pre>
+        </div>
+        <div class="card">
+          <h3 style="margin-top: 0">Error</h3>
+          <pre class="output" style="max-height: none">{ "error": "Human readable message" }</pre>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        <strong>Remember:</strong> <code>fetch</code> does <em>not</em> throw on HTTP 404/500 —
+        only network failures throw. You must check <code>response.ok</code>. Axios treats
+        non-2xx as errors by default.
+      </div>
+
+      <p class="foot-note">
+        Data is in-memory and resets when you restart the server. Tokens are teaching fakes
+        (<code>token-&lt;id&gt;-&lt;role&gt;</code>), not production JWT.
+      </p>
+    </main>
+  </body>
+</html>

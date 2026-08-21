@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>4. Auth &amp; Protected — Student Lab</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="../index.html">Fetch <span>&amp;</span> Axios Lab</a>
+        <nav class="nav">
+          <a href="../index.html">Home</a>
+          <a href="01-fetch-get.html">1. Fetch GET</a>
+          <a href="02-fetch-crud.html">2. Fetch CRUD</a>
+          <a href="03-axios-crud.html">3. Axios</a>
+          <a href="04-auth-protected.html" aria-current="page">4. Auth</a>
+          <a href="../playground.html">Playground</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <h1>Lesson 4 — Auth &amp; protected APIs</h1>
+      <p class="lead">
+        Log in, store a token in <code>localStorage</code>, then send
+        <code>Authorization: Bearer &lt;token&gt;</code>. Compare 401 (not logged in) vs 403
+        (logged in but not allowed).
+      </p>
+
+      <div class="creds" style="margin-bottom: 1rem">
+        <div class="cred">
+          <strong>Student</strong>
+          <code>student</code> / <code>1234</code>
+        </div>
+        <div class="cred">
+          <strong>Admin</strong>
+          <code>admin</code> / <code>1234</code>
+        </div>
+      </div>
+
+      <div class="teach">
+        <strong>Headers with fetch and axios</strong>
+        <pre>// after login
+localStorage.setItem("token", token);
+
+// fetch
+fetch("/api/me", {
+  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+});
+
+// axios (one request)
+axios.get("/api/me", {
+  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+});
+
+// axios default for all later calls
+axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;</pre>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-top: 0">1. Login (public)</h3>
+          <p style="color: var(--muted); font-size: 0.9rem; margin-top: 0">
+            <span class="badge badge-post">POST</span>
+            <code>/api/auth/login</code>
+          </p>
+          <div class="field">
+            <label for="username">Username</label>
+            <input id="username" type="text" value="student" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" value="1234" autocomplete="current-password" />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="btn-login-fetch">Login with fetch</button>
+            <button type="button" class="btn btn-secondary" id="btn-login-axios">
+              Login with axios
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-logout">Clear token</button>
+          </div>
+          <p style="font-size: 0.9rem; margin: 0.75rem 0 0">
+            Saved token:
+            <code id="token-preview">(none)</code>
+          </p>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top: 0">2. Protected calls</h3>
+          <ul class="clean" style="font-size: 0.9rem; color: var(--muted)">
+            <li><code>GET /api/me</code> — any valid token</li>
+            <li>
+              <code>POST /api/orders</code> — body
+              <code>{ productId, quantity }</code>
+            </li>
+            <li><code>GET /api/admin/stats</code> — admin only (403 for student)</li>
+          </ul>
+          <div class="field">
+            <label for="client">Send with</label>
+            <select id="client">
+              <option value="fetch">fetch</option>
+              <option value="axios">axios</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="product-id">Order productId</label>
+            <input id="product-id" type="number" min="1" value="1" />
+          </div>
+          <div class="field">
+            <label for="quantity">Order quantity</label>
+            <input id="quantity" type="number" min="1" value="2" />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="btn-me">GET /api/me</button>
+            <button type="button" class="btn btn-secondary" id="btn-me-no-token">
+              /me without token (401)
+            </button>
+            <button type="button" class="btn" id="btn-order">POST /api/orders</button>
+            <button type="button" class="btn" id="btn-admin">GET /api/admin/stats</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        <strong>Try this sequence:</strong> (1) Call /api/me with no token → 401.
+        (2) Login as <code>student</code> → call /api/me → 200.
+        (3) Call admin stats → 403.
+        (4) Logout, login as <code>admin</code> → admin stats → 200.
+      </div>
+
+      <div id="status" class="status" role="status"></div>
+      <p class="panel-label">Response</p>
+      <pre id="output" class="output"></pre>
+
+      <p class="foot-note">
+        Free practice: <a href="../playground.html">API Playground</a>
+      </p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="../js/config.js"></script>
+    <script>
+      const TOKEN_KEY = "lab_token";
+      const statusEl = document.getElementById("status");
+      const outputEl = document.getElementById("output");
+      const tokenPreview = document.getElementById("token-preview");
+
+      function getToken() {
+        return localStorage.getItem(TOKEN_KEY) || "";
+      }
+
+      function setToken(token) {
+        if (token) localStorage.setItem(TOKEN_KEY, token);
+        else localStorage.removeItem(TOKEN_KEY);
+        tokenPreview.textContent = token || "(none)";
+        if (token) {
+          axios.defaults.headers.common["Authorization"] = "Bearer " + token;
+        } else {
+          delete axios.defaults.headers.common["Authorization"];
+        }
+      }
+
+      setToken(getToken());
+
+      async function loginWithFetch() {
+        setStatus(statusEl, "loading", "Logging in (fetch)…");
+        showJson(outputEl, "");
+        try {
+          const res = await fetch(API_BASE + "/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: document.getElementById("username").value,
+              password: document.getElementById("password").value,
+            }),
+          });
+          const body = await res.json();
+          if (!res.ok) {
+            setStatus(statusEl, "err", `${res.status} — ${body.error}`);
+            showJson(outputEl, body);
+            return;
+          }
+          setToken(body.data.token);
+          setStatus(statusEl, "ok", `OK ${res.status} — token saved`);
+          showJson(outputEl, body);
+        } catch (err) {
+          setStatus(statusEl, "err", err.message);
+        }
+      }
+
+      async function loginWithAxios() {
+        setStatus(statusEl, "loading", "Logging in (axios)…");
+        showJson(outputEl, "");
+        try {
+          const res = await axios.post(API_BASE + "/api/auth/login", {
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+          });
+          setToken(res.data.data.token);
+          setStatus(statusEl, "ok", `OK ${res.status} — token saved`);
+          showJson(outputEl, res.data);
+        } catch (err) {
+          if (err.response) {
+            setStatus(statusEl, "err", `${err.response.status} — ${err.response.data.error}`);
+            showJson(outputEl, err.response.data);
+          } else {
+            setStatus(statusEl, "err", err.message);
+          }
+        }
+      }
+
+      async function callFetch(path, options = {}, skipAuth = false) {
+        setStatus(statusEl, "loading", "Request (fetch)…");
+        showJson(outputEl, "");
+        const headers = { ...(options.headers || {}) };
+        if (!skipAuth && getToken()) {
+          headers.Authorization = "Bearer " + getToken();
+        }
+        if (options.body && !headers["Content-Type"]) {
+          headers["Content-Type"] = "application/json";
+        }
+        try {
+          const res = await fetch(API_BASE + path, { ...options, headers });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setStatus(statusEl, "err", `${res.status} — ${body.error || "failed"}`);
+          } else {
+            setStatus(statusEl, "ok", `OK ${res.status}`);
+          }
+          showJson(outputEl, body);
+        } catch (err) {
+          setStatus(statusEl, "err", err.message);
+        }
+      }
+
+      async function callAxios(path, method = "get", data, skipAuth = false) {
+        setStatus(statusEl, "loading", "Request (axios)…");
+        showJson(outputEl, "");
+        const headers = {};
+        if (skipAuth) {
+          // override default Authorization for 401 demo
+          headers.Authorization = undefined;
+        }
+        try {
+          const config = { headers };
+          if (skipAuth) {
+            config.transformRequest = [
+              (body, hdrs) => {
+                delete hdrs.Authorization;
+                if (body && typeof body === "object") {
+                  hdrs["Content-Type"] = "application/json";
+                  return JSON.stringify(body);
+                }
+                return body;
+              },
+            ];
+          }
+          let res;
+          if (method === "get") res = await axios.get(API_BASE + path, config);
+          else res = await axios.post(API_BASE + path, data, config);
+          setStatus(statusEl, "ok", `OK ${res.status}`);
+          showJson(outputEl, res.data);
+        } catch (err) {
+          if (err.response) {
+            setStatus(statusEl, "err", `${err.response.status} — ${err.response.data?.error}`);
+            showJson(outputEl, err.response.data);
+          } else {
+            setStatus(statusEl, "err", err.message);
+          }
+        }
+      }
+
+      function useAxios() {
+        return document.getElementById("client").value === "axios";
+      }
+
+      document.getElementById("btn-login-fetch").addEventListener("click", loginWithFetch);
+      document.getElementById("btn-login-axios").addEventListener("click", loginWithAxios);
+      document.getElementById("btn-logout").addEventListener("click", () => {
+        setToken("");
+        setStatus(statusEl, "ok", "Token cleared");
+        showJson(outputEl, { data: { token: null } });
+      });
+
+      document.getElementById("btn-me").addEventListener("click", () => {
+        if (useAxios()) callAxios("/api/me");
+        else callFetch("/api/me");
+      });
+
+      document.getElementById("btn-me-no-token").addEventListener("click", () => {
+        if (useAxios()) callAxios("/api/me", "get", undefined, true);
+        else callFetch("/api/me", {}, true);
+      });
+
+      document.getElementById("btn-order").addEventListener("click", () => {
+        const body = {
+          productId: Number(document.getElementById("product-id").value),
+          quantity: Number(document.getElementById("quantity").value),
+        };
+        if (useAxios()) callAxios("/api/orders", "post", body);
+        else
+          callFetch("/api/orders", {
+            method: "POST",
+            body: JSON.stringify(body),
+          });
+      });
+
+      document.getElementById("btn-admin").addEventListener("click", () => {
+        if (useAxios()) callAxios("/api/admin/stats");
+        else callFetch("/api/admin/stats");
+      });
+    </script>
+  </body>
+</html>

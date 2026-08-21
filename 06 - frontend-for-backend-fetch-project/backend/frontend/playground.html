@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Playground — Student Lab</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="index.html">Fetch <span>&amp;</span> Axios Lab</a>
+        <nav class="nav">
+          <a href="index.html">Home</a>
+          <a href="lessons/01-fetch-get.html">1. Fetch GET</a>
+          <a href="lessons/02-fetch-crud.html">2. Fetch CRUD</a>
+          <a href="lessons/03-axios-crud.html">3. Axios</a>
+          <a href="lessons/04-auth-protected.html">4. Auth</a>
+          <a href="playground.html" aria-current="page">Playground</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <h1>API Playground</h1>
+      <p class="lead">
+        Build any request: choose client, method, path, optional JSON body and Bearer token.
+        Watch Network in DevTools while you experiment.
+      </p>
+
+      <div class="card">
+        <div class="field">
+          <label>Client library</label>
+          <div class="toggle-group" role="group" aria-label="Client">
+            <button type="button" class="active" id="mode-fetch" data-mode="fetch">fetch</button>
+            <button type="button" id="mode-axios" data-mode="axios">axios</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="method">Method</label>
+          <select id="method">
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>PATCH</option>
+            <option>DELETE</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="path">Path</label>
+          <input id="path" type="text" value="/api/products" list="paths" />
+          <datalist id="paths">
+            <option value="/api/health"></option>
+            <option value="/api/products"></option>
+            <option value="/api/products/1"></option>
+            <option value="/api/auth/login"></option>
+            <option value="/api/me"></option>
+            <option value="/api/orders"></option>
+            <option value="/api/admin/stats"></option>
+            <option value="/api/error"></option>
+          </datalist>
+        </div>
+
+        <div class="field">
+          <label for="token">Bearer token (optional)</label>
+          <input
+            id="token"
+            type="text"
+            placeholder="token-1-user — paste after login"
+            autocomplete="off"
+          />
+          <p style="font-size: 0.85rem; color: var(--muted); margin: 0.35rem 0 0">
+            Or
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-use-saved">
+              use token from localStorage
+            </button>
+            (key <code>lab_token</code> from lesson 4)
+          </p>
+        </div>
+
+        <div class="field">
+          <label for="body">JSON body (for POST / PUT / PATCH)</label>
+          <textarea id="body" spellcheck="false">
+{
+  "name": "Marker",
+  "price": 3
+}
+</textarea
+          >
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn" id="btn-send">Send request</button>
+          <button type="button" class="btn btn-secondary" id="btn-fill-login">
+            Fill login body
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-fill-order">
+            Fill order body
+          </button>
+        </div>
+      </div>
+
+      <div id="status" class="status" role="status"></div>
+      <p class="panel-label">Response</p>
+      <pre id="output" class="output"></pre>
+
+      <div class="tip">
+        Quick paths: <code>/api/products</code>, <code>/api/auth/login</code>,
+        <code>/api/me</code>, <code>/api/admin/stats</code>, <code>/api/error</code>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+      let clientMode = "fetch";
+      const statusEl = document.getElementById("status");
+      const outputEl = document.getElementById("output");
+
+      document.querySelectorAll(".toggle-group button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".toggle-group button").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          clientMode = btn.dataset.mode;
+        });
+      });
+
+      document.getElementById("btn-use-saved").addEventListener("click", () => {
+        document.getElementById("token").value = localStorage.getItem("lab_token") || "";
+      });
+
+      document.getElementById("btn-fill-login").addEventListener("click", () => {
+        document.getElementById("method").value = "POST";
+        document.getElementById("path").value = "/api/auth/login";
+        document.getElementById("body").value = JSON.stringify(
+          { username: "student", password: "1234" },
+          null,
+          2
+        );
+      });
+
+      document.getElementById("btn-fill-order").addEventListener("click", () => {
+        document.getElementById("method").value = "POST";
+        document.getElementById("path").value = "/api/orders";
+        document.getElementById("body").value = JSON.stringify(
+          { productId: 1, quantity: 1 },
+          null,
+          2
+        );
+      });
+
+      function parseBody() {
+        const raw = document.getElementById("body").value.trim();
+        if (!raw) return undefined;
+        return JSON.parse(raw);
+      }
+
+      async function sendWithFetch(method, path, token) {
+        const headers = {};
+        if (token) headers.Authorization = "Bearer " + token;
+
+        const options = { method, headers };
+        if (method !== "GET" && method !== "DELETE") {
+          const body = parseBody();
+          if (body !== undefined) {
+            headers["Content-Type"] = "application/json";
+            options.body = JSON.stringify(body);
+          }
+        }
+
+        const res = await fetch(API_BASE + path, options);
+        const data = await res.json().catch(() => ({}));
+        return { status: res.status, ok: res.ok, data };
+      }
+
+      async function sendWithAxios(method, path, token) {
+        const headers = {};
+        if (token) headers.Authorization = "Bearer " + token;
+
+        const config = { method, url: API_BASE + path, headers };
+        if (method !== "GET" && method !== "DELETE") {
+          config.data = parseBody();
+        }
+
+        try {
+          const res = await axios(config);
+          return { status: res.status, ok: true, data: res.data };
+        } catch (err) {
+          if (err.response) {
+            return {
+              status: err.response.status,
+              ok: false,
+              data: err.response.data,
+            };
+          }
+          throw err;
+        }
+      }
+
+      document.getElementById("btn-send").addEventListener("click", async () => {
+        const method = document.getElementById("method").value;
+        const path = document.getElementById("path").value.trim();
+        const token = document.getElementById("token").value.trim();
+
+        if (!path.startsWith("/")) {
+          setStatus(statusEl, "err", "Path should start with / (e.g. /api/products)");
+          return;
+        }
+
+        setStatus(statusEl, "loading", `Sending with ${clientMode}…`);
+        showJson(outputEl, "");
+
+        try {
+          const result =
+            clientMode === "fetch"
+              ? await sendWithFetch(method, path, token)
+              : await sendWithAxios(method, path, token);
+
+          if (result.ok) {
+            setStatus(statusEl, "ok", `${clientMode} → ${result.status}`);
+          } else {
+            const msg = result.data?.error || "Request failed";
+            setStatus(statusEl, "err", `${clientMode} → ${result.status} — ${msg}`);
+          }
+          showJson(outputEl, result.data);
+
+          // Convenience: if login succeeded, fill token field + localStorage
+          if (path.includes("/auth/login") && result.ok && result.data?.data?.token) {
+            document.getElementById("token").value = result.data.data.token;
+            localStorage.setItem("lab_token", result.data.data.token);
+          }
+        } catch (err) {
+          setStatus(statusEl, "err", err.message);
+          showJson(outputEl, { error: err.message });
+        }
+      });
+    </script>
+  </body>
+</html>

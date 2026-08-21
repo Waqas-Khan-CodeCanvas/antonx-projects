@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>1. Fetch GET — Student Lab</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="../index.html">Fetch <span>&amp;</span> Axios Lab</a>
+        <nav class="nav">
+          <a href="../index.html">Home</a>
+          <a href="01-fetch-get.html" aria-current="page">1. Fetch GET</a>
+          <a href="02-fetch-crud.html">2. Fetch CRUD</a>
+          <a href="03-axios-crud.html">3. Axios</a>
+          <a href="04-auth-protected.html">4. Auth</a>
+          <a href="../playground.html">Playground</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <h1>Lesson 1 — Fetch GET</h1>
+      <p class="lead">
+        Load products with the built-in <code>fetch</code> API. Focus: async/await, checking
+        <code>response.ok</code>, and parsing JSON.
+      </p>
+
+      <div class="teach">
+        <strong>Pattern to remember</strong>
+        <pre>const res = await fetch(`${API_BASE}/api/products`);
+if (!res.ok) {
+  const err = await res.json();
+  throw new Error(err.error || `HTTP ${res.status}`);
+}
+const json = await res.json(); // { data: [...] }</pre>
+      </div>
+
+      <div class="tip">
+        Open <strong>DevTools → Network → Fetch/XHR</strong> before clicking buttons. Inspect
+        status, response body, and timing (the API adds ~300ms delay on purpose).
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-top: 0">Get all products</h3>
+          <p style="color: var(--muted); font-size: 0.9rem; margin-top: 0">
+            <span class="badge badge-get">GET</span>
+            <code>/api/products</code>
+          </p>
+          <button type="button" class="btn" id="btn-list">Load product list</button>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top: 0">Get one by id</h3>
+          <p style="color: var(--muted); font-size: 0.9rem; margin-top: 0">
+            <span class="badge badge-get">GET</span>
+            <code>/api/products/:id</code>
+          </p>
+          <div class="field">
+            <label for="product-id">Product id</label>
+            <input id="product-id" type="number" min="1" value="1" />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" id="btn-one">Get product</button>
+            <button type="button" class="btn btn-secondary" id="btn-404">
+              Try missing id (404)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top: 0">Intentional server error</h3>
+        <p style="color: var(--muted); font-size: 0.9rem">
+          <span class="badge badge-get">GET</span>
+          <code>/api/error</code> always returns 500 — practice your error handling.
+        </p>
+        <button type="button" class="btn btn-danger" id="btn-error">Call /api/error</button>
+      </div>
+
+      <div id="status" class="status" role="status"></div>
+      <p class="panel-label">Response</p>
+      <pre id="output" class="output"></pre>
+
+      <div class="warn-box">
+        <strong>Teacher note / self-check:</strong> Does fetch throw on 404? Try “missing id”.
+        If you only used <code>try/catch</code> without <code>res.ok</code>, the 404 may look like
+        “success” in the UI.
+      </div>
+
+      <p class="foot-note">
+        Next: <a href="02-fetch-crud.html">Lesson 2 — Fetch CRUD</a>
+      </p>
+    </main>
+
+    <script src="../js/config.js"></script>
+    <script>
+      const statusEl = document.getElementById("status");
+      const outputEl = document.getElementById("output");
+
+      async function fetchJson(path) {
+        setStatus(statusEl, "loading", "Loading…");
+        showJson(outputEl, "");
+
+        const res = await fetch(API_BASE + path);
+
+        // fetch only rejects on network failure — check status yourself
+        const body = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          const message = body.error || `HTTP ${res.status}`;
+          setStatus(statusEl, "err", `${res.status} — ${message}`);
+          showJson(outputEl, body);
+          return;
+        }
+
+        setStatus(statusEl, "ok", `OK ${res.status}`);
+        showJson(outputEl, body);
+      }
+
+      document.getElementById("btn-list").addEventListener("click", () => {
+        fetchJson("/api/products");
+      });
+
+      document.getElementById("btn-one").addEventListener("click", () => {
+        const id = document.getElementById("product-id").value;
+        fetchJson(`/api/products/${id}`);
+      });
+
+      document.getElementById("btn-404").addEventListener("click", () => {
+        document.getElementById("product-id").value = "9999";
+        fetchJson("/api/products/9999");
+      });
+
+      document.getElementById("btn-error").addEventListener("click", () => {
+        fetchJson("/api/error");
+      });
+    </script>
+  </body>
+</html>
