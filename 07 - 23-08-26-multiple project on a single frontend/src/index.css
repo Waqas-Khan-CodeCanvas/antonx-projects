@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap'); */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-ink: #14161F;
+  --color-ink-2: #1D2033;
+  --color-ink-soft: #4B5165;
+  --color-paper: #F1F3F6;
+  --color-surface: #FFFFFF;
+  --color-line: #E2E5EC;
+  --color-line-dark: #2B2F45;
+
+  --color-indigo: #5B5FEF;
+  --color-indigo-50: #F1F1FE;
+  --color-indigo-100: #E7E7FD;
+  --color-indigo-600: #4A4DDB;
+  --color-indigo-700: #3B3ECC;
+
+  --color-amber: #F2A93B;
+  --color-amber-100: #FDF1DC;
+  --color-amber-700: #9C6110;
+
+  --color-positive: #2FAE66;
+  --color-positive-100: #E3F6EC;
+  --color-positive-700: #1F7A47;
+
+  --color-negative: #E8543F;
+  --color-negative-100: #FCE7E3;
+  --color-negative-700: #B5311E;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --shadow-panel: 0 1px 2px rgba(20,22,31,0.04), 0 8px 24px -12px rgba(20,22,31,0.12);
+
+  --animate-rise: rise 0.5s ease-out both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-paper text-ink font-sans antialiased dark:bg-ink dark:text-paper transition-colors duration-300;
+  }
+  ::selection { @apply bg-indigo/20 text-ink; }
+  :focus-visible { @apply outline-none ring-2 ring-indigo ring-offset-2 ring-offset-paper dark:ring-offset-ink; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-line dark:bg-line-dark rounded-full; }
+}
+
+@layer components {
+  .eyebrow { @apply font-mono text-xs uppercase tracking-[0.18em] text-indigo; }
+  .container-page { @apply mx-auto w-full max-w-6xl px-6 sm:px-8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
