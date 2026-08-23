@@ -1,0 +1,38 @@
+export const projects = [
+  {
+    slug: 'todo',
+    name: 'Task Board',
+    tagline: 'Local-first to-do list with filtering and persistence.',
+    route: '/apps/todo',
+    stack: ['React', 'localStorage', 'Hooks'],
+    status: 'stable',
+    accent: 'indigo',
+  },
+  {
+    slug: 'quiz',
+    name: 'Trivia Engine',
+    tagline: 'Timed multiple-choice quiz with a scored results screen.',
+    route: '/apps/quiz',
+    stack: ['React', 'State machine', 'Timers'],
+    status: 'stable',
+    accent: 'amber',
+  },
+  {
+    slug: 'expenses',
+    name: 'Ledger',
+    tagline: 'Income and expense tracker with live running totals.',
+    route: '/apps/expenses',
+    stack: ['React', 'localStorage', 'Derived state'],
+    status: 'stable',
+    accent: 'positive',
+  },
+  {
+    slug: 'weather',
+    name: 'Weather Desk',
+    tagline: 'City search with current conditions and a 5-day outlook.',
+    route: '/apps/weather',
+    stack: ['React', 'Open-Meteo API', 'Async/await'],
+    status: 'live data',
+    accent: 'negative',
+  },
+]
