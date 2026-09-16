@@ -1,7 +1,7 @@
 
 
-function Helloworld() {
+function App() {
   return "hello world";
 }
 
-export default Helloworld;
+export default App;
